@@ -1,17 +1,28 @@
 import json
+from django.forms.models import model_to_dict
+# from django.http import JsonResponse
+from products.models import Product
 
-from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
+from products.serializers import ProductSerializer
+
+"""
+Serializers allow complex data such as querysets and model instances to
+be converted to native Python datatypes that can then 
+be easily rendered into JSON , XML or other content types
+"""
+
+@api_view(["GET","POST"])
 def api_home(request, *args, **kwargs):
-
-    body = request.body
+    """
+    DRF API View
+    """
     data = {}
-    try:
-        data = json.loads(body)
-    except:
-        pass
-    # print(data)
-    data['params'] = dict(request.GET) # To get the params from get request
-    data['headers'] = dict(request.headers) 
-    data['content_type'] = request.content_type
-    return JsonResponse(data)
+    serializer = ProductSerializer(data=request.data)
+    if serializer.is_valid(raise_exception=True):
+        instance = serializer.save()
+        print(instance)
+
+    return Response(serializer.data)
