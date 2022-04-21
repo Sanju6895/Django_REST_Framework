@@ -2,40 +2,46 @@ from rest_framework import generics, mixins
 
 from .models import Product
 from .serializers import ProductSerializer
-
-
+from api.mixins import StaffEditorPermissionMixin
 """
 We have 3 types of views here
 Function based
 Class based 
 Mixin based
 """
-class ProductDetailAPIView(generics.RetrieveAPIView):
+class ProductDetailAPIView(generics.RetrieveAPIView, StaffEditorPermissionMixin):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     #lookup_field
 
-class ProductListCreateAPIView(generics.ListCreateAPIView):
+class ProductListCreateAPIView(generics.ListCreateAPIView, StaffEditorPermissionMixin):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    #lookup_field
 
-class ProductUpdateAPIView(generics.UpdateAPIView):
+    def perform_create(self, serializer):
+        title = serializer.validate_data.get('title')
+        content = serializer.validate_data.get('content') or None
+        if content is None:
+            content =  title
+        serializer.save(content=content)
+
+
+class ProductUpdateAPIView(generics.UpdateAPIView, StaffEditorPermissionMixin):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'pk'
-    
+
     def perform_update(self, serializer):
         instance = serializer.save()
         if not instance.content:
             instance.content = instance.title
 
 
-class ProductDestroyAPIView(generics.DestroyAPIView):
+class ProductDestroyAPIView(generics.DestroyAPIView, StaffEditorPermissionMixin):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'pk'
-    
+
     def perform_destroy(self, instance):
         super().perform_destroy(instance)
 
@@ -45,7 +51,8 @@ class ProductMixinView(mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
                         mixins.CreateModelMixin,
                         mixins.DestroyModelMixin,
-                        generics.GenericAPIView):
+                        generics.GenericAPIView,
+                        StaffEditorPermissionMixin):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
